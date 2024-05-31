@@ -1,24 +1,24 @@
 name: Build and publish
-
+ 
 # Environment variables
 env:
   REGISTRY: ghcr.io
   BACKEND_IMAGE_NAME: ${{ github.repository }}-backend
   FRONTEND_IMAGE_NAME: ${{ github.repository }}-frontend
-
+ 
 on:
   push:
     branches:
       - master
-
+ 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-
+ 
 jobs:
   code-analysis:
     name: 🔎 Analyze code with SonarQube
     runs-on: ubuntu-latest
-    
+   
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,20 +33,20 @@ jobs:
       #   timeout-minutes: 5
       #   env:
       #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-  
+ 
   build-publish-backend:
     name: 🛠️ Build and publish backend
     runs-on: ubuntu-latest
-
+ 
     permissions:
       contents: read
       packages: write
-    
+   
     steps:
       # Checkout (clone) the repository
       - name: ⏬ Checkout repository
         uses: actions/checkout@v4
-    
+   
       # Login to the Gitbub Container Registry
       - name: 🐳 Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -54,18 +54,18 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-        
+       
       # Get Docker image metadata (tags, labels, etc.)
       - name: 🗃️ Extract metadata for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}
-      
+     
       # Set up Docker Buildx (the docker build system)
       - name: 🛠️ Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
+ 
       # Build and push the docker image to repository
       - name: 🛠️ Build and ⏫ push backend image
         uses: docker/build-push-action@v5
@@ -90,7 +90,7 @@ jobs:
             "DATABASE_NAME=myDigitalHub"
             "DATABASE_USERNAME=strapi"
             "DATABASE_PASSWORD=strapi"
-
+ 
   build-publish-frontend:
     name: 🛠️ Build and push frontend
     runs-on: ubuntu-latest
@@ -102,7 +102,7 @@ jobs:
       - name: ⏬ Checkout repository
         uses: actions/checkout@v4
       # Uses the `docker/login-action` action to log in to the Container registry registry using the account and password that will publish the packages. Once published, the packages are scoped to the account defined here.
-  
+ 
       - name: 🔐 Log in to the Container registry
         uses: docker/login-action@v3
         with:
@@ -134,7 +134,7 @@ jobs:
             "NEXT_PUBLIC_STRAPI_URL=${{ secrets.NEXT_PUBLIC_STRAPI_URL }}"
             "NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}"
             "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}"
-            
+           
   deploy:
     name: 🚀 Deploy to Production
     runs-on: ubuntu-latest
@@ -145,11 +145,9 @@ jobs:
           install -m 600 -D /dev/null ~/.ssh/id_rsa
           echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} > ~/.ssh/known_hosts
-      
+     
       - name: ⏬ Pull and 🚀 Start containers
         run : |
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "cd ${{secrets.DEPLOY_WORKDIR}} && docker compose pull && docker compose down && docker compose up -d && exit"
       - name: 🧹 Clean up
         run: rm -rf ~/.ssh
-          
-          
